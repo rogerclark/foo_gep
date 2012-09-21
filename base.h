@@ -16,6 +16,23 @@
 
 #define HEADER_STRING(i,n,f) if ((f)[0]) (i).meta_add((n), pfc::stringcvt::string_utf8_from_ansi((f), sizeof((f))))
 
+class info_hasher_md5 : public Music_Emu::Hash_Function
+{
+	static_api_ptr_t<hasher_md5> & m_hasher;
+	hasher_md5_state & m_state;
+
+public:
+	info_hasher_md5( static_api_ptr_t<hasher_md5> & p_hasher, hasher_md5_state & p_state ) : m_hasher( p_hasher ), m_state( p_state ) { }
+	void hash_( byte const* data, size_t size ) { m_hasher->process( m_state, data, size ); }
+};
+
+extern const GUID guid_gep_index;
+
+class metadb_index_client_gep : public metadb_index_client
+{
+	virtual metadb_index_hash transform(const file_info & info, const playable_location & location);
+};
+
 class input_gep
 {
 protected:
@@ -54,6 +71,9 @@ protected:
 	service_ptr_t<file>         m_file;
 	pfc::string_simple          m_path;
 	t_filestats                 m_stats;
+
+	metadb_index_hash           m_index_hash;
+	hasher_md5_result           m_file_hash;
 
 	void handle_warning(gme_t * emu = NULL);
 

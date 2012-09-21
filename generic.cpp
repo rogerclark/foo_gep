@@ -60,7 +60,7 @@ public:
 
 	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
 	{
-		if ( p_reason == input_open_info_write ) throw exception_io_data();
+		if ( p_reason == input_open_info_write ) p_reason = input_open_info_read;
 
 		input_gep::open( p_filehint, p_path, p_reason, p_abort );
 
@@ -101,6 +101,12 @@ public:
 
 		if ( p_reason == input_open_decode && gtype != gme_gym_type )
 			setup_effects_2();
+
+		static_api_ptr_t<hasher_md5> p_hasher;
+		hasher_md5_state p_hash_state;
+		p_hasher->initialize( p_hash_state );
+		emu->hash_( info_hasher_md5( p_hasher, p_hash_state ) );
+		m_file_hash = p_hasher->get_result( p_hash_state );
 
 		m_file.release();
 
@@ -166,6 +172,48 @@ public:
 		HEADER_STRING( p_info, "tagger", i.tagger );
 
 		p_info.set_length(dlength);
+
+		pfc::string8 hash_string;
+
+		for ( unsigned i = 0; i < 16; i++ ) hash_string += pfc::format_uint( (t_uint8)m_file_hash.m_data[i], 2, 16 );
+
+		p_info.info_set( "gme_hash", hash_string );
+
+		service_ptr_t<metadb_index_client> index_client = new service_impl_t<metadb_index_client_gep>;
+		m_index_hash = index_client->transform( p_info, playable_location_impl( m_path, p_subsong ) );
+
+		pfc::array_t<t_uint8> tag;
+		static_api_ptr_t<metadb_index_manager>()->get_user_data_t( guid_gep_index, m_index_hash, tag );
+
+		if ( tag.get_count() )
+		{
+			file::ptr tag_file;
+			filesystem::g_open_tempmem( tag_file, p_abort );
+			tag_file->write_object( tag.get_ptr(), tag.get_count(), p_abort );
+
+			p_info.meta_remove_all();
+
+			tag_processor::read_trailing( tag_file, p_info, p_abort );
+			p_info.info_set( "tagtype", "apev2 db" );
+		}
+	}
+
+	void retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
+	{
+		file::ptr tag_file;
+		filesystem::g_open_tempmem( tag_file, p_abort );
+		tag_processor::write_apev2( tag_file, p_info, p_abort );
+
+		pfc::array_t<t_uint8> tag;
+		tag_file->seek( 0, p_abort );
+		tag.set_count( tag_file->get_size_ex( p_abort ) );
+		tag_file->read_object( tag.get_ptr(), tag.get_count(), p_abort );
+
+		static_api_ptr_t<metadb_index_manager>()->set_user_data( guid_gep_index, m_index_hash, tag.get_ptr(), tag.get_count() );
+	}
+
+	void retag_commit( abort_callback & p_abort )
+	{
 	}
 
 	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )

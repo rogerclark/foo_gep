@@ -1,7 +1,11 @@
-#define MYVERSION "1.147"
+#define MYVERSION "1.148"
 
 /*
 	change log
+
+2012-09-21 04:18 UTC - kode54
+- Implemented a tag database for all formats except for SPC
+- Version is now 1.148
 
 2012-08-23 20:27 UTC - kode54
 - Fixed a crash in VGM input

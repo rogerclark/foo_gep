@@ -176,7 +176,14 @@ void input_gep::open( service_ptr_t<file> p_filehint, const char * p_path, t_inp
 {
 	if ( p_filehint.is_empty() )
 	{
-		filesystem::g_open( m_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
+		try
+		{
+			filesystem::g_open( m_file, p_path, ( p_reason == input_open_info_write ) ? filesystem::open_mode_write_existing : filesystem::open_mode_read, p_abort );
+		}
+		catch (exception_io_denied &)
+		{
+			filesystem::g_open( m_file, p_path, filesystem::open_mode_read, p_abort );
+		}
 	}
 	else m_file = p_filehint;
 
@@ -354,3 +361,40 @@ bool input_gep::g_is_our_content_type( const char * p_content_type )
 {
 	return false;
 }
+
+// {23278278-1B32-47A5-8502-9AE2042A0173}
+static const GUID guid_gep_index = 
+{ 0x23278278, 0x1b32, 0x47a5, { 0x85, 0x2, 0x9a, 0xe2, 0x4, 0x2a, 0x1, 0x73 } };
+
+metadb_index_hash metadb_index_client_gep::transform(const file_info & info, const playable_location & location)
+{
+	const metadb_index_hash hash_null = 0;
+
+	hasher_md5_state hasher_state;
+	static_api_ptr_t<hasher_md5> hasher;
+
+	t_uint32 subsong = location.get_subsong();
+
+	hasher->initialize( hasher_state );
+
+	hasher->process( hasher_state, &subsong, sizeof(subsong) );
+
+	const char * str = info.info_get( "gme_hash" );
+	if ( str ) hasher->process_string( hasher_state, str );
+	else hasher->process_string( hasher_state, location.get_path() );
+
+	return from_md5( hasher->get_result( hasher_state ) );
+}
+
+class initquit_gep : public initquit
+{
+public:
+	void on_init()
+	{
+		static_api_ptr_t<metadb_index_manager>()->add( new service_impl_t<metadb_index_client_gep>, guid_gep_index, 4 * 7 * 24 * 60 * 60 * 10000000 );
+	}
+
+	void on_quit() { }
+};
+
+static initquit_factory_t<initquit_gep> g_initquit_gep_factory;
