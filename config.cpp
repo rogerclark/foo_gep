@@ -1,7 +1,11 @@
-#define MYVERSION "1.148"
+#define MYVERSION "1.149"
 
 /*
 	change log
+
+2012-09-25 23:52 UTC - kode54
+- Fixed HES file hashing when the file header contains invalid metadata
+- Version is now 1.149
 
 2012-09-21 04:18 UTC - kode54
 - Implemented a tag database for all formats except for SPC
