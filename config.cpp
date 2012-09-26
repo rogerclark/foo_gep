@@ -1,7 +1,14 @@
-#define MYVERSION "1.150"
+#define MYVERSION "1.151"
 
 /*
 	change log
+
+2012-09-26 00:35 UTC - kode54
+- Fixed VGM PSG clock rate handling
+- Implemented VGM PSG dual chip volume reduction case
+- Fixed VGM PSG noise width info reporting
+- Renamed VGM PSG noise feedback and width info fields
+- Version is now 1.151
 
 2012-09-26 00:09 UTC - kode54
 - Fixed KSS info reader

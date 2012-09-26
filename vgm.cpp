@@ -409,13 +409,14 @@ public:
 
 		set_freq( p_info, "YM2413", get_le32( m_header.ym2413_rate ) );
 		set_int( p_info, "VGM_FRAME_RATE", get_le32( m_header.frame_rate ) );
-		set_freq( p_info, "SN76489", get_le32( m_header.psg_rate ) );
+		set_freq( p_info, "SN76489", get_le32( m_header.psg_rate ) & 0x7FFFFFFF );
+		p_info.info_set_float( "VGM_SN76489_GAIN", ( m_header.psg_rate[3] & 0xC0 ) == 0x40 ? 0.5 : 1.0, 1 );
 		if ( get_le32( m_header.psg_rate ) )
 		{
 			p_info.info_set_int( "VGM_SN76489_FLAGS", m_header.sn76489_flags );
 			if ( get_le16( m_header.noise_feedback ) )
-				p_info.info_set( "VGM_NOISE_FEEDBACK", pfc::format_int( get_le16( m_header.noise_feedback ), 4, 16 ) );
-			set_freq( p_info, "VGM_NOISE_WIDTH", m_header.noise_width );
+				p_info.info_set( "VGM_SN76489_NOISE_FEEDBACK", pfc::format_int( get_le16( m_header.noise_feedback ), 4, 16 ) );
+			set_int( p_info, "VGM_SN76589_NOISE_WIDTH", m_header.noise_width );
 		}
 		set_freq( p_info, "YM2612", get_le32( m_header.ym2612_rate ) );
 		set_freq( p_info, "YM2151", get_le32( m_header.ym2151_rate ) );
