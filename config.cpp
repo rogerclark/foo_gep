@@ -1,7 +1,11 @@
-#define MYVERSION "1.149"
+#define MYVERSION "1.150"
 
 /*
 	change log
+
+2012-09-26 00:09 UTC - kode54
+- Fixed KSS info reader
+- Version is now 1.150
 
 2012-09-25 23:52 UTC - kode54
 - Fixed HES file hashing when the file header contains invalid metadata
