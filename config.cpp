@@ -1,7 +1,11 @@
-#define MYVERSION "1.151"
+#define MYVERSION "1.152"
 
 /*
 	change log
+
+2012-10-05 01:26 UTC - kode54
+- Fixed NSF/E retagging when file writing is enabled
+- Version is now 1.152
 
 2012-09-26 00:35 UTC - kode54
 - Fixed VGM PSG clock rate handling

@@ -490,8 +490,6 @@ public:
 
 					m_stats = m_file->get_stats( p_abort );
 
-					m_file.release();
-
 					/*pfc::string8_fastalloc path;
 					path = m_path;
 					const char * ext = nsf.bIsExtended ? "nsfe" : "nsf";
