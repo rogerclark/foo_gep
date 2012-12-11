@@ -1,7 +1,15 @@
-#define MYVERSION "1.152"
+#define MYVERSION "1.153"
 
 /*
 	change log
+
+2012-12-11 06:10 UTC - kode54
+- Fixed Vgm_File Gd3 tag reading, which fixes OKIM6295 volume reduction for
+  CP System rips
+- Version is now 1.153
+
+2012-12-11 05:15 UTC - kode54
+- Eliminated messy register buffering and sorting from VGM player
 
 2012-10-05 01:26 UTC - kode54
 - Fixed NSF/E retagging when file writing is enabled
