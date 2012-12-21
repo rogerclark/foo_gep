@@ -1,7 +1,12 @@
-#define MYVERSION "1.154"
+#define MYVERSION "1.155"
 
 /*
 	change log
+
+2012-12-21 20:11 UTC - kode54
+- Reduced HES clock to 3579545Hz and adjusted timing and APU synthesis accordingly
+- Implemented HuC6280 support in VGM player
+- Version is now 1.155
 
 2012-12-21 18:14 UTC - kode54
 - Fixed AY period frequency for VGM files
