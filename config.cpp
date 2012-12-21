@@ -1,7 +1,12 @@
-#define MYVERSION "1.153"
+#define MYVERSION "1.154"
 
 /*
 	change log
+
+2012-12-21 18:14 UTC - kode54
+- Fixed AY period frequency for VGM files
+- Fixed AY/SSG parts of YM2203/YM2608/YM2610B for VGM files
+- Version is now 1.154
 
 2012-12-11 06:10 UTC - kode54
 - Fixed Vgm_File Gd3 tag reading, which fixes OKIM6295 volume reduction for
