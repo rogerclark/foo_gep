@@ -1,7 +1,11 @@
-#define MYVERSION "1.155"
+#define MYVERSION "1.156"
 
 /*
 	change log
+
+2012-12-21 20:30 UTC - kode54
+- Fixed HuC6280 support in VGM player
+- Version is now 1.156
 
 2012-12-21 20:11 UTC - kode54
 - Reduced HES clock to 3579545Hz and adjusted timing and APU synthesis accordingly
