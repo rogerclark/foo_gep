@@ -1,7 +1,11 @@
-#define MYVERSION "1.156"
+#define MYVERSION "1.157"
 
 /*
 	change log
+
+2012-12-22 00:47 UTC - kode54
+- Implemented Capcom QSound support in VGM player
+- Version is now 1.157
 
 2012-12-21 20:30 UTC - kode54
 - Fixed HuC6280 support in VGM player
