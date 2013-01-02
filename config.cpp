@@ -1,7 +1,11 @@
-#define MYVERSION "1.157"
+#define MYVERSION "1.158"
 
 /*
 	change log
+
+2013-01-02 20:30 UTC - kode54
+- Added treble equalizer assignment in a few places that were missing it
+- Version is now 1.158
 
 2012-12-22 00:47 UTC - kode54
 - Implemented Capcom QSound support in VGM player
