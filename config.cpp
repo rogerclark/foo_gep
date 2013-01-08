@@ -1,7 +1,11 @@
-#define MYVERSION "1.158"
+#define MYVERSION "1.159"
 
 /*
 	change log
+
+2013-01-08 18:54 UTC - kode54
+- Fixed playback speed of some HES rips
+- Version is now 1.159
 
 2013-01-02 20:30 UTC - kode54
 - Added treble equalizer assignment in a few places that were missing it
