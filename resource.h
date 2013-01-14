@@ -83,6 +83,11 @@
 #define IDC_VOICE28                     1333
 #define IDC_VOICE29                     1334
 #define IDC_VOICE30                     1335
+#define IDC_PITCH_CAPTION               1339
+#define IDC_PITCH                       1340
+#define IDC_SEMITONES_SLIDER            1341
+#define IDC_TEMPO_SLIDER3               1344
+#define IDC_CENTS_SLIDER                1344
 
 // Next default values for new objects
 // 

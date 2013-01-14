@@ -2,7 +2,17 @@
 #include "config.h"
 #include "monitor.h"
 
+#include "fir_resampler.h"
+
 #include <cmath>
+
+static struct fir_initializer
+{
+	fir_initializer()
+	{
+		fir_init();
+	}
+} g_fir_initializer;
 
 static t_size sjis_decode_char( const char * p_sjis, t_size max )
 {
@@ -81,7 +91,14 @@ input_gep::input_gep()
 
 	buffer = 0;
 
+	resampler[0] = 0;
+	resampler[1] = 0;
+
 	sample_rate = cfg_sample_rate;
+
+	sample_rate_scale = 1.0;
+
+	last_block_was_resampled = false;
 
 	monitoring = false;
 
@@ -101,6 +118,15 @@ input_gep::~input_gep()
 
 	delete buffer;
 
+	if (resampler[1])
+	{
+		fir_resampler_delete(resampler[1]);
+	}
+	if (resampler[0])
+	{
+		fir_resampler_delete(resampler[0]);
+	}
+
 	if ( monitoring ) monitor_stop();
 }
 
@@ -118,13 +144,13 @@ void input_gep::handle_warning(gme_t * emu)
 void input_gep::monitor_start()
 {
 	monitoring = true;
-	if (is_normal_playback) ::monitor_start( emu, m_path );
+	if (is_normal_playback) ::monitor_start( emu, &sample_rate_scale, m_path );
 }
 
 void input_gep::monitor_update()
 {
-	if (is_normal_playback) ::monitor_update( emu );
-	else ::monitor_apply( emu );
+	if (is_normal_playback) ::monitor_update( emu, &sample_rate_scale );
+	else ::monitor_apply( emu, &sample_rate_scale );
 }
 
 void input_gep::monitor_stop()
@@ -282,7 +308,45 @@ bool input_gep::decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
 			}
 		}*/
 
-		p_chunk.set_data_fixedpoint( buf, 1024 * sizeof( blip_sample_t ), sample_rate, 2, sizeof( blip_sample_t ) * 8, audio_chunk::channel_config_stereo );
+		int samples_out = 512;
+
+		if ( sample_rate_scale != 1.0 )
+		{
+			if ( !resampler[0] ) resampler[0] = fir_resampler_create();
+			if ( !resampler[1] ) resampler[1] = fir_resampler_create();
+			if ( !last_block_was_resampled )
+			{
+				fir_resampler_clear( resampler[0] );
+				fir_resampler_clear( resampler[1] );
+				last_block_was_resampled = true;
+			}
+			fir_resampler_set_rate( resampler[0], sample_rate_scale );
+			fir_resampler_set_rate( resampler[1], sample_rate_scale );
+			sample_buffer_resampled.grow_size( 1024 * 10 );
+
+			blip_sample_t * buf_out = sample_buffer_resampled.get_ptr();
+			samples_out = 0;
+			int sample_count = 512;
+			while ( sample_count || ( fir_resampler_ready( resampler[ 0 ] ) && samples_out < 512 * 10 ) )
+			{
+				while ( fir_resampler_get_free_count( resampler[0] ) && sample_count )
+				{
+					fir_resampler_write_sample( resampler[ 0 ], *buf++ );
+					fir_resampler_write_sample( resampler[ 1 ], *buf++ );
+					--sample_count;
+				}
+				if ( !fir_resampler_ready( resampler[ 0 ] ) ) break;
+				*buf_out++ = fir_resampler_get_sample( resampler[ 0 ] );
+				*buf_out++ = fir_resampler_get_sample( resampler[ 1 ] );
+				fir_resampler_remove_sample( resampler[ 0 ] );
+				fir_resampler_remove_sample( resampler[ 1 ] );
+				++samples_out;
+			}
+
+			buf = sample_buffer_resampled.get_ptr();
+		}
+
+		p_chunk.set_data_fixedpoint( buf, samples_out * 2 * sizeof( blip_sample_t ), sample_rate, 2, sizeof( blip_sample_t ) * 8, audio_chunk::channel_config_stereo );
 
 		return true;
 	}

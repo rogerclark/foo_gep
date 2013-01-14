@@ -53,6 +53,7 @@
     <ClCompile Include="vis_spc.cpp">
       <Filter>visualizers</Filter>
     </ClCompile>
+    <ClCompile Include="fir_resampler.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base.h" />
@@ -72,6 +73,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="coleco.h" />
     <ClInclude Include="archive_renamer.h" />
+    <ClInclude Include="fir_resampler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cough.wav" />

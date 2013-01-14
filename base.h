@@ -41,7 +41,12 @@ protected:
 
 	Simple_Effects_Buffer     * buffer;
 
+	void                      * resampler[2];
+
 	unsigned                    sample_rate;
+
+	double                      sample_rate_scale;
+	bool                        last_block_was_resampled;
 
 	int                         subsong;
 	//int                         voice_mask;
@@ -67,6 +72,7 @@ protected:
 	int                         effects_echo_depth;
 
 	pfc::array_t<blip_sample_t> sample_buffer;
+	pfc::array_t<blip_sample_t> sample_buffer_resampled;
 
 	service_ptr_t<file>         m_file;
 	pfc::string_simple          m_path;

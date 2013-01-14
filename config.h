@@ -14,7 +14,7 @@ extern cfg_int cfg_vgm_gd3_prefers_japanese;
 
 extern cfg_int cfg_vgm_loop_count;
 
-extern cfg_int cfg_control_override, cfg_control_tempo;
+extern cfg_int cfg_control_override, cfg_control_tempo, cfg_control_pitch_semitones, cfg_control_pitch_cents;
 
 extern cfg_int cfg_format_enable;
 

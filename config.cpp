@@ -1,7 +1,13 @@
-#define MYVERSION "1.159"
+#define MYVERSION "1.160"
 
 /*
 	change log
+
+2013-01-13 05:30 UTC - kode54
+- Implemented pitch control
+- Attempted to fix VGM tempo control
+- Improved QSound playback quality
+- Version is now 1.160
 
 2013-01-08 18:54 UTC - kode54
 - Fixed playback speed of some HES rips
@@ -528,6 +534,8 @@ static const GUID guid_cfg_vgm_loop_count = { 0xc6690d9, 0x6c36, 0x470e, { 0x93,
 
 static const GUID guid_cfg_control_override = { 0x550a107e, 0x8b34, 0x41e5, { 0xae, 0xd6, 0x2, 0x1b, 0xf8, 0x3e, 0x14, 0xe4 } };
 static const GUID guid_cfg_control_tempo = { 0xfbddc77c, 0x2a6, 0x41c9, { 0xbf, 0xfa, 0x54, 0x60, 0xbe, 0x2a, 0xa5, 0x23 } };
+static const GUID guid_cfg_control_pitch_semitones = { 0x9a19936e, 0x43eb, 0x44d3, { 0xa8, 0x4c, 0xc9, 0x31, 0x25, 0xf4, 0xb2, 0xf5 } };
+static const GUID guid_cfg_control_pitch_cents = { 0x3ed7d01e, 0x47d4, 0x4435, { 0x8b, 0x4c, 0xad, 0x5f, 0x3, 0xda, 0x37, 0xe2 } };
 
 static const GUID guid_cfg_effects_enable = { 0x7a12d84d, 0x92ab, 0x4dae, { 0x89, 0x7, 0xfc, 0x47, 0x11, 0x1e, 0x66, 0x74 } };
 static const GUID guid_cfg_effects_bass = { 0x6bad04a5, 0xb579, 0x400e, { 0x8c, 0xbd, 0x59, 0xb1, 0x22, 0x63, 0x2a, 0x37 } };
@@ -551,6 +559,8 @@ enum
 	default_cfg_format_enable = ~0,
 	default_cfg_control_override = 0,
 	default_cfg_control_tempo = 10000,
+	default_cfg_control_pitch_semitones = 0,
+	default_cfg_control_pitch_cents = 0,
 	default_cfg_effects_enable = 0,
 	default_cfg_effects_bass = 128,
 	default_cfg_effects_treble = 128,
@@ -578,6 +588,8 @@ cfg_int cfg_format_enable(guid_cfg_format_enable, default_cfg_format_enable);
 
 cfg_int cfg_control_override(guid_cfg_control_override, default_cfg_control_override);
 cfg_int cfg_control_tempo(guid_cfg_control_tempo, default_cfg_control_tempo);
+cfg_int cfg_control_pitch_semitones(guid_cfg_control_pitch_semitones, default_cfg_control_pitch_semitones);
+cfg_int cfg_control_pitch_cents(guid_cfg_control_pitch_cents, default_cfg_control_pitch_cents);
 
 cfg_int cfg_effects_enable(guid_cfg_effects_enable, default_cfg_effects_enable);
 cfg_int cfg_effects_bass(guid_cfg_effects_bass, default_cfg_effects_bass);

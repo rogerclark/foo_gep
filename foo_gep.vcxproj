@@ -121,6 +121,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="fir_resampler.c" />
     <ClCompile Include="gbs.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -150,6 +151,7 @@
   <ItemGroup>
     <ClInclude Include="archive_renamer.h" />
     <ClInclude Include="coleco.h" />
+    <ClInclude Include="fir_resampler.h" />
     <ClInclude Include="NSF_File.h" />
     <ClInclude Include="PlaylistDlg.h" />
     <ClInclude Include="monitor.h" />

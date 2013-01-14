@@ -25,7 +25,25 @@ int                        mute_mask        = 0;
 static const GUID guid_cfg_placement = { 0x2ea726fb, 0x60b, 0x471c, { 0x99, 0x40, 0xdc, 0x9a, 0xf1, 0x4e, 0x51, 0x88 } };
 static cfg_window_placement cfg_placement(guid_cfg_placement);
 
-void monitor_start( gme_t * p_emu, const char * p_path )
+static void monitor_calculate_pitch_tempo( double & p_pitch, double & p_tempo )
+{
+	if ( cfg_control_override )
+	{
+		double pitch_offset_cents = static_cast<double> (cfg_control_pitch_semitones * 100 + cfg_control_pitch_cents) * (1.0 / 100.0);
+
+		p_tempo = static_cast<double> (cfg_control_tempo) * (1.0 / 10000.0);
+		p_pitch = pow(1.059463094359295309843105314939748495817, pitch_offset_cents);
+
+		p_tempo /= p_pitch;
+	}
+	else
+	{
+		p_tempo = 1.0;
+		p_pitch = 1.0;
+	}
+}
+
+void monitor_start( gme_t * p_emu, double * p_sample_rate_scale, const char * p_path )
 {
 	insync( lock );
 
@@ -40,26 +58,31 @@ void monitor_start( gme_t * p_emu, const char * p_path )
 
 	if ( cfg_control_override )
 	{
-		p_emu->set_tempo( static_cast<double> (cfg_control_tempo) / 10000 );
+		double tempo;
+		monitor_calculate_pitch_tempo( *p_sample_rate_scale, tempo );
+
+		p_emu->set_tempo( tempo );
 		p_emu->mute_voices( mute_mask );
 		p_emu->ignore_silence();
 	}
 }
 
-void monitor_apply( gme_t * p_emu )
+void monitor_apply( gme_t * p_emu, double * p_sample_rate_scale )
 {
 	insync( lock );
 
 	bool enabled = !!cfg_control_override;
-	double t = enabled ? ( static_cast<double> (cfg_control_tempo) / 10000 ) : 1;
+	double t;
 	int mask = enabled ? mute_mask : 0;
+
+	monitor_calculate_pitch_tempo( *p_sample_rate_scale, t );
 
 	p_emu->set_tempo( t );
 	p_emu->mute_voices( mask );
 	p_emu->ignore_silence( enabled );
 }
 
-void monitor_update( gme_t * p_emu )
+void monitor_update( gme_t * p_emu, double * p_sample_rate_scale )
 {
 	insync( lock );
 
@@ -70,8 +93,10 @@ void monitor_update( gme_t * p_emu )
 			changed_controls = false;
 
 			bool enabled = !!cfg_control_override;
-			double t = enabled ? ( static_cast<double> (cfg_control_tempo) / 10000 ) : 1;
+			double t;
 			int mask = enabled ? mute_mask : 0;
+
+			monitor_calculate_pitch_tempo( *p_sample_rate_scale, t );
 
 			p_emu->set_tempo( t );
 			p_emu->mute_voices( mask );
@@ -131,6 +156,18 @@ class monitor_dialog
 				uSendMessage( w, TBM_SETRANGEMAX, FALSE, 400 * 100 );
 				uSendMessage( w, TBM_SETPAGESIZE, 0, 1250 );
 				uSendMessage( w, TBM_SETPOS, TRUE, cfg_control_tempo );
+
+				w = GetDlgItem( wnd, IDC_SEMITONES_SLIDER );
+				uSendMessage( w, TBM_SETRANGEMIN, FALSE, 0 );
+				uSendMessage( w, TBM_SETRANGEMAX, FALSE, 36 + 36 );
+				uSendMessage( w, TBM_SETPAGESIZE, 0, 12 );
+				uSendMessage( w, TBM_SETPOS, TRUE, cfg_control_pitch_semitones + 36 );
+
+				w = GetDlgItem( wnd, IDC_CENTS_SLIDER );
+				uSendMessage( w, TBM_SETRANGEMIN, FALSE, 0 );
+				uSendMessage( w, TBM_SETRANGEMAX, FALSE, 99 + 99 );
+				uSendMessage( w, TBM_SETPAGESIZE, 0, 25 );
+				uSendMessage( w, TBM_SETPOS, TRUE, cfg_control_pitch_cents + 99 );
 				/*for ( unsigned tick = 25 * 100; tick <= 400 * 100; tick += 25 * 100 )
 					uSendMessage( w, TBM_SETTIC, 0, tick );*/
 
@@ -140,6 +177,7 @@ class monitor_dialog
 					changed_controls = false;
 					update();
 					update_tempo();
+					update_pitch();
 				}
 
 				SetTimer( wnd, 0, 100, 0 );
@@ -188,6 +226,10 @@ class monitor_dialog
 				EnableWindow( GetDlgItem( wnd, IDC_TEMPO_CAPTION ), enable );
 				EnableWindow( GetDlgItem( wnd, IDC_TEMPO ), enable );
 				EnableWindow( GetDlgItem( wnd, IDC_TEMPO_SLIDER ), enable );
+				EnableWindow( GetDlgItem( wnd, IDC_PITCH_CAPTION ), enable );
+				EnableWindow( GetDlgItem( wnd, IDC_PITCH ), enable );
+				EnableWindow( GetDlgItem( wnd, IDC_SEMITONES_SLIDER ), enable );
+				EnableWindow( GetDlgItem( wnd, IDC_CENTS_SLIDER ), enable );
 
 				for ( unsigned i = 0, j = voice_names.get_size(); i < j; ++i )
 				{
@@ -200,15 +242,20 @@ class monitor_dialog
 			{
 				insync( lock );
 
-				changed_controls = ( cfg_control_tempo != 100 * 100 ) || ( mute_mask != 0 );
+				changed_controls = ( cfg_control_tempo != 100 * 100 ) || ( cfg_control_pitch_semitones != 0 ) || ( cfg_control_pitch_cents != 0 ) || ( mute_mask != 0 );
 				cfg_control_tempo = 100 * 100;
+				cfg_control_pitch_semitones = 0;
+				cfg_control_pitch_cents = 0;
 				mute_mask = 0;
 
 				if ( changed_controls )
 				{
 					uSendDlgItemMessage( wnd, IDC_TEMPO_SLIDER, TBM_SETPOS, TRUE, cfg_control_tempo );
+					uSendDlgItemMessage( wnd, IDC_SEMITONES_SLIDER, TBM_SETPOS, TRUE, cfg_control_pitch_semitones + 36 );
+					uSendDlgItemMessage( wnd, IDC_CENTS_SLIDER, TBM_SETPOS, TRUE, cfg_control_pitch_cents + 99 );
 					update();
 					update_tempo();
+					update_pitch();
 				}
 			}
 			else if ( wp - IDC_VOICE1 < 30 )
@@ -226,15 +273,38 @@ class monitor_dialog
 
 		case WM_HSCROLL:
 			{
-				unsigned t = uSendMessage((HWND)lp,TBM_GETPOS,0,0);
-				if ( t < 2 ) t = 2;
-				else if ( t > 400 * 100 ) t = 400 * 100;
+				unsigned id = (unsigned) GetMenu((HWND)lp);
+				int t = uSendMessage((HWND)lp,TBM_GETPOS,0,0);
 
 				insync( lock );
 				
-				changed_controls = true;
-				cfg_control_tempo = t;
-				update_tempo();
+				if ( id == IDC_TEMPO_SLIDER )
+				{
+					if ( t < 2 ) t = 2;
+					else if ( t > 400 * 100 ) t = 400 * 100;
+
+					changed_controls = true;
+					cfg_control_tempo = t;
+					update_tempo();
+				}
+				else if ( id == IDC_SEMITONES_SLIDER )
+				{
+					if ( t < 0 ) t = 0;
+					else if ( t > 36 + 36 ) t = 36 + 36;
+
+					changed_controls = true;
+					cfg_control_pitch_semitones = t - 36;
+					update_pitch();
+				}
+				else if ( id == IDC_CENTS_SLIDER )
+				{
+					if ( t < 0 ) t = 0;
+					else if ( t > 99 + 99 ) t = 99 + 99;
+
+					changed_controls = true;
+					cfg_control_pitch_cents = t - 99;
+					update_pitch();
+				}
 			}
 			break;
 		}
@@ -258,6 +328,10 @@ class monitor_dialog
 		EnableWindow( GetDlgItem( wnd, IDC_TEMPO_CAPTION ), enable );
 		EnableWindow( GetDlgItem( wnd, IDC_TEMPO ), enable );
 		EnableWindow( GetDlgItem( wnd, IDC_TEMPO_SLIDER ), enable );
+		EnableWindow( GetDlgItem( wnd, IDC_PITCH_CAPTION ), enable );
+		EnableWindow( GetDlgItem( wnd, IDC_PITCH ), enable );
+		EnableWindow( GetDlgItem( wnd, IDC_SEMITONES_SLIDER ), enable );
+		EnableWindow( GetDlgItem( wnd, IDC_CENTS_SLIDER ), enable );
 
 		HWND w;
 		unsigned count = voice_names.get_size();
@@ -285,6 +359,15 @@ class monitor_dialog
 		int tempo = cfg_control_tempo;
 		text << pfc::format_int( tempo / 100 ) << "." << pfc::format_int( tempo % 100, 2 ) << "%";
 		uSetDlgItemText( wnd, IDC_TEMPO, text );
+	}
+
+	void update_pitch()
+	{
+		pfc::string8 text;
+		double pitch_offset_cents = static_cast<double> (cfg_control_pitch_semitones * 100 + cfg_control_pitch_cents) * (1.0 / 100.0);
+		if ( pitch_offset_cents >= 0 ) text = "+";
+		text += pfc::format_float( pitch_offset_cents, 0, 2 );
+		uSetDlgItemText( wnd, IDC_PITCH, text );
 	}
 
 public:
