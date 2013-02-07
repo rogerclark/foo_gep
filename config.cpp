@@ -1,7 +1,11 @@
-#define MYVERSION "1.160"
+#define MYVERSION "1.161"
 
 /*
 	change log
+
+2013-02-07 03:38 UTC - kode54
+- Reverted VGM tempo change, or at least enough to disable the effects
+- Version is now 1.161
 
 2013-01-13 05:30 UTC - kode54
 - Implemented pitch control
