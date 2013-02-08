@@ -1,7 +1,11 @@
-#define MYVERSION "1.161"
+#define MYVERSION "1.162"
 
 /*
 	change log
+
+2013-02-08 01:03 UTC - kode54
+- Changed AY frequency to fix .ay files without breaking .vgm files
+- Version is now 1.162
 
 2013-02-07 03:38 UTC - kode54
 - Reverted VGM tempo change, or at least enough to disable the effects
