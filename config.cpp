@@ -1,7 +1,11 @@
-#define MYVERSION "1.162"
+#define MYVERSION "1.163"
 
 /*
 	change log
+
+2013-04-30 12:48 UTC - kode54
+- Now VGM supports dual YMZ280B chips
+- Version is now 1.163
 
 2013-02-08 01:03 UTC - kode54
 - Changed AY frequency to fix .ay files without breaking .vgm files
