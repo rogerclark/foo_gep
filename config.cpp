@@ -1,7 +1,11 @@
-#define MYVERSION "1.163"
+#define MYVERSION "1.164"
 
 /*
 	change log
+
+2013-08-13 02:27 UTC - kode54
+- Incremented NESM version number allowed by CNSFFile
+- Version is now 1.164
 
 2013-04-30 12:48 UTC - kode54
 - Now VGM supports dual YMZ280B chips
