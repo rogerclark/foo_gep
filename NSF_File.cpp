@@ -97,7 +97,7 @@ void CNSFFile::LoadFile_NESM( service_ptr_t<file> & p_file, bool needdata, abort
 		//confirm the header
 		if( pfc::byteswap_if_be_t( hdr.nHeader ) != HEADERTYPE_NESM ) throw exception_io_data();
 		if( hdr.nHeaderExtra != 0x1A )                                         throw exception_io_data();
-		if( hdr.nVersion > 2 )                                                 throw exception_io_data();
+		if( hdr.nVersion > 3 )                                                 throw exception_io_data();
 
 		//NESM is generally easier to work with (but limited!)
 		//  just move the data over from NESM_HEADER over to our member data
