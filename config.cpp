@@ -1,7 +1,11 @@
-#define MYVERSION "1.166"
+#define MYVERSION "1.167"
 
 /*
 	change log
+
+2013-09-09 19:53 UTC - kode54
+- Reverted last release and moved it to a testing branch
+- Version is now 1.167
 
 2013-09-09 06:43 UTC - kode54
 - Replaced Fir_Resampler with lanczos_resampler
