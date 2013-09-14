@@ -1,7 +1,11 @@
-#define MYVERSION "1.167"
+#define MYVERSION "1.168"
 
 /*
 	change log
+
+2013-09-14 21:04 UTC - kode54
+- Implemented SPC nearest and linear interpolation modes
+- Version is now 1.168
 
 2013-09-09 19:53 UTC - kode54
 - Reverted last release and moved it to a testing branch
@@ -846,10 +850,12 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 	enable_vgm_loop_count( !cfg_indefinite );
 
 	w = GetDlgItem( IDC_INTERPOLATION );
+	uSendMessageText( w, CB_ADDSTRING, 0, "None" );
+	uSendMessageText( w, CB_ADDSTRING, 0, "Linear" );
 	uSendMessageText( w, CB_ADDSTRING, 0, "Gaussian" );
 	uSendMessageText( w, CB_ADDSTRING, 0, "Cubic" );
 	uSendMessageText( w, CB_ADDSTRING, 0, "Sinc" );
-	::SendMessage( w, CB_SETCURSEL, cfg_spc_interpolation, 0 );
+	::SendMessage( w, CB_SETCURSEL, cfg_spc_interpolation + 2, 0 );
 
 	union
 	{
@@ -914,7 +920,7 @@ void CMyPreferences::reset() {
 	SetDlgItemInt( IDC_SAMPLERATE, default_cfg_sample_rate, FALSE );
 	SendDlgItemMessage( IDC_VGMLOOPCOUNT, CB_SETCURSEL, default_cfg_vgm_loop_count );
 	enable_vgm_loop_count( !default_cfg_indefinite );
-	SendDlgItemMessage( IDC_INTERPOLATION, CB_SETCURSEL, default_cfg_spc_interpolation );
+	SendDlgItemMessage( IDC_INTERPOLATION, CB_SETCURSEL, default_cfg_spc_interpolation + 2 );
 
 	OnChanged();
 }
@@ -929,7 +935,7 @@ void CMyPreferences::apply() {
 	cfg_history_rate.add_item(temp);
 	cfg_sample_rate = t;
 	cfg_vgm_loop_count = SendDlgItemMessage( IDC_VGMLOOPCOUNT, CB_GETCURSEL );
-	cfg_spc_interpolation = SendDlgItemMessage( IDC_INTERPOLATION, CB_GETCURSEL );
+	cfg_spc_interpolation = SendDlgItemMessage( IDC_INTERPOLATION, CB_GETCURSEL ) - 2;
 	t = parse_time_crap( string_utf8_from_window( GetDlgItem( IDC_DLENGTH ) ) );
 	if ( t != BORK_TIME ) cfg_default_length = t;
 	else
@@ -970,7 +976,7 @@ bool CMyPreferences::HasChanged() {
 	//returns whether our dialog content is different from the current configuration (whether the apply button should be enabled or not)
 	bool changed = false;
 	if ( !changed && GetDlgItemInt( IDC_SAMPLERATE, NULL, FALSE ) != cfg_sample_rate ) changed = true;
-	if ( !changed && SendDlgItemMessage( IDC_INTERPOLATION, CB_GETCURSEL ) != cfg_spc_interpolation ) changed = true;
+	if ( !changed && SendDlgItemMessage( IDC_INTERPOLATION, CB_GETCURSEL ) != cfg_spc_interpolation + 2 ) changed = true;
 	if ( !changed && SendDlgItemMessage( IDC_VGMLOOPCOUNT, CB_GETCURSEL ) != cfg_vgm_loop_count ) changed = true;
 	if ( !changed && SendDlgItemMessage( IDC_INDEFINITE, BM_GETCHECK ) != cfg_indefinite ) changed = true;
 	if ( !changed && SendDlgItemMessage( IDC_WRITE, BM_GETCHECK ) != cfg_write ) changed = true;
