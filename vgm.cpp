@@ -2,8 +2,6 @@
 #include "reader.h"
 #include "config.h"
 
-#include "archive_renamer.h"
-
 #include <gme/Vgm_Emu.h>
 
 #include <fex/Gzip_Reader.h>
@@ -629,7 +627,5 @@ public:
 };
 
 namespace c { DECLARE_FILE_TYPE("VGM files", "*.VGM;*.VGZ"); }
-namespace d { DECLARE_FILE_TYPE("VGM7Z files", "*.VGM7Z"); }
 
 static input_factory_t<input_vgm> g_input_vgm_factory;
-archive_renamed_factory(vgm7z, 7z);

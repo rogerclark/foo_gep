@@ -2,8 +2,6 @@
 #include "reader.h"
 #include "config.h"
 
-#include "archive_renamer.h"
-
 #include <gme/blargg_endian.h>
 #include <gme/Spc_Emu.h>
 //#include <gme/SPC_Filter.h>
@@ -1146,9 +1144,6 @@ public:
 };
 
 namespace a { DECLARE_FILE_TYPE("SPC files", "*.SPC"); }
-namespace b { DECLARE_FILE_TYPE("RSN files", "*.RSN"); }
 
 static input_factory_t           <input_spc>   g_input_spc_factory;
 static contextmenu_item_factory_t<context_spc> g_contextmenu_item_spc_factory;
-
-archive_renamed_factory(rsn, rar);

@@ -1,7 +1,18 @@
-#define MYVERSION "1.168"
+#define MYVERSION "1.169"
 
 /*
 	change log
+
+2013-10-16 06:15 UTC - kode54
+- ...And fixed the Data_Reader and File_Reader interfaces to use the
+  new long and uint64_t types
+- Version is now 1.169
+
+2013-10-16 06:02 UTC - kode54
+- Implemented internal RSN and VGM7Z readers based on File_Extractor
+  ...Which I could have swore I already did the last time someone
+  reported crashes in my silly archive redirector, which already
+  depended on the user having existing RAR and 7Z unpackers installed
 
 2013-09-14 21:04 UTC - kode54
 - Implemented SPC nearest and linear interpolation modes

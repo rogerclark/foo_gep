@@ -9,14 +9,14 @@ foobar_Data_Reader::foobar_Data_Reader( const service_ptr_t<file> & p_file, abor
 	set_remain( remain );
 }
 
-blargg_err_t foobar_Data_Reader::read_v( void * p, int s )
+blargg_err_t foobar_Data_Reader::read_v( void * p, long s )
 {
 	if ( m_file->read( p, s , m_abort ) == s )
 		return blargg_ok;
 	return "Read returned fewer bytes than requested";
 }
 
-blargg_err_t foobar_Data_Reader::skip_v( int n )
+blargg_err_t foobar_Data_Reader::skip_v( BOOST::uint64_t n )
 {
 	m_file->seek_ex(n, file::seek_from_current, m_abort);
 	return blargg_ok;
@@ -28,14 +28,14 @@ foobar_File_Reader::foobar_File_Reader( const service_ptr_t<file> & p_file, abor
 	set_tell( p_file->get_position( p_abort ) );
 }
 
-blargg_err_t foobar_File_Reader::read_v( void * p, int s )
+blargg_err_t foobar_File_Reader::read_v( void * p, long s )
 {
 	if ( m_file->read( p, s , m_abort ) == s )
 		return blargg_ok;
 	return "Read returned fewer bytes than requested";
 }
 
-blargg_err_t foobar_File_Reader::skip_v( int n )
+blargg_err_t foobar_File_Reader::skip_v( BOOST::uint64_t n )
 {
 	m_file->seek_ex(n, file::seek_from_current, m_abort);
 	return blargg_ok;

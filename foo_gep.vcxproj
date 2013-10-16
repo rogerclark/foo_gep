@@ -140,6 +140,7 @@
     </ClCompile>
     <ClCompile Include="nsf.cpp" />
     <ClCompile Include="spc.cpp" />
+    <ClCompile Include="unpackers.cpp" />
     <ClCompile Include="vgm.cpp" />
     <ClCompile Include="NSF_File.cpp" />
     <ClCompile Include="PlaylistDlg.cpp" />
@@ -152,7 +153,6 @@
     <ClCompile Include="vis_spc.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="archive_renamer.h" />
     <ClInclude Include="coleco.h" />
     <ClInclude Include="fir_resampler.h" />
     <ClInclude Include="NSF_File.h" />

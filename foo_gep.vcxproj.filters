@@ -13,6 +13,9 @@
     <Filter Include="visualizers">
       <UniqueIdentifier>{ec43998d-a748-4d95-9e44-61fd5c55ed7e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="unpacker">
+      <UniqueIdentifier>{f5eb9ce6-546f-44cf-ab3c-4db0ec588b14}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="base.cpp" />
@@ -54,6 +57,9 @@
       <Filter>visualizers</Filter>
     </ClCompile>
     <ClCompile Include="fir_resampler.c" />
+    <ClCompile Include="unpackers.cpp">
+      <Filter>unpacker</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base.h" />
@@ -72,7 +78,6 @@
     <ClInclude Include="reader.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="coleco.h" />
-    <ClInclude Include="archive_renamer.h" />
     <ClInclude Include="fir_resampler.h" />
   </ItemGroup>
   <ItemGroup>
