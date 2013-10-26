@@ -1,7 +1,12 @@
-#define MYVERSION "1.172"
+#define MYVERSION "1.17"
 
 /*
 	change log
+
+2013-10-26 22:34 UTC - kode54
+- More SPC playback fixes
+- Another amendment to the SFM BML metadata standard
+- Version is now 1.173
 
 2013-10-26 18:07 UTC - kode54
 - Fixed applying mute masks, tempo, pitch control, and disabling silence detection
