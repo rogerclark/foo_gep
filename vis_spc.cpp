@@ -4,7 +4,7 @@
 #include "../ATLHelpers/ATLHelpers.h"
 #include <atlframe.h>
 
-#include <gme/Spc_Dsp.h>
+#include <gme/higan/dsp/SPC_DSP.h>
 
 #include <math.h>
 
@@ -41,8 +41,8 @@ protected:
 		unsigned char val;
 		EnvM() { val = 0; }
 		EnvM( EnvMode mode ) { val = mode; }
-		EnvM( Spc_Dsp::env_mode_t env_mode, unsigned char adsr0, unsigned char gain ) { set( env_mode, adsr0, gain ); }
-		unsigned set( Spc_Dsp::env_mode_t env_mode, unsigned char adsr0, unsigned char gain )
+		EnvM( SuperFamicom::SPC_DSP::env_mode_t env_mode, unsigned char adsr0, unsigned char gain ) { set( env_mode, adsr0, gain ); }
+		unsigned set( SuperFamicom::SPC_DSP::env_mode_t env_mode, unsigned char adsr0, unsigned char gain )
 		{
 			if ( adsr0 & 0x80 ) val = env_mode;
 			else
@@ -67,13 +67,13 @@ protected:
 	bool m_bVisShowLabels;
 	unsigned m_bVisColorStyle;
 
-	unsigned char regs[Spc_Dsp::register_count];
-	EnvM env_modes[Spc_Dsp::voice_count];
-	int out_levels[Spc_Dsp::voice_count * 2];
+	unsigned char regs[SuperFamicom::SPC_DSP::register_count];
+	EnvM env_modes[SuperFamicom::SPC_DSP::voice_count];
+	int out_levels[SuperFamicom::SPC_DSP::voice_count * 2];
 
-	unsigned char old_regs[Spc_Dsp::register_count];
-	EnvM old_env_modes[Spc_Dsp::voice_count];
-	int old_out_levels[Spc_Dsp::voice_count * 2];
+	unsigned char old_regs[SuperFamicom::SPC_DSP::register_count];
+	EnvM old_env_modes[SuperFamicom::SPC_DSP::voice_count];
+	int old_out_levels[SuperFamicom::SPC_DSP::voice_count * 2];
 
 	HDC m_hDC;
 	BOOL m_bDrawAll;
@@ -180,7 +180,7 @@ public:
 			const char * p_registers = p_info.info_get( spc_vis_field_registers );
 			if ( p_registers )
 			{
-				for ( unsigned i = 0, j = min( Spc_Dsp::register_count, strlen( p_registers ) / 2 ); i < j; i++ )
+				for ( unsigned i = 0, j = min( SuperFamicom::SPC_DSP::register_count, strlen( p_registers ) / 2 ); i < j; i++ )
 				{
 					unsigned val = p_registers[ i * 2 ];
 					if ( val <= '9' && val >= '0' ) val -= '0';
@@ -199,20 +199,20 @@ public:
 			const char * p_env_modes = p_info.info_get( spc_vis_field_env_modes );
 			if ( p_env_modes )
 			{
-				for ( unsigned i = 0, j = min( Spc_Dsp::voice_count, strlen( p_env_modes ) ); i < j; i++ )
+				for ( unsigned i = 0, j = min( SuperFamicom::SPC_DSP::voice_count, strlen( p_env_modes ) ); i < j; i++ )
 				{
 					unsigned val = p_env_modes[ i ] - '0';
-					Spc_Dsp::env_mode_t env_mode = Spc_Dsp::env_release;
-					Spc_Dsp::env_mode_t env_modes[] = { Spc_Dsp::env_release, Spc_Dsp::env_attack, Spc_Dsp::env_decay, Spc_Dsp::env_sustain };
+					SuperFamicom::SPC_DSP::env_mode_t env_mode = SuperFamicom::SPC_DSP::env_release;
+					SuperFamicom::SPC_DSP::env_mode_t env_modes[] = { SuperFamicom::SPC_DSP::env_release, SuperFamicom::SPC_DSP::env_attack, SuperFamicom::SPC_DSP::env_decay, SuperFamicom::SPC_DSP::env_sustain };
 					if ( val < 4 ) env_mode = env_modes[ val ];
-					this->env_modes[ i ].set( env_mode, regs[ 0x10 * i + Spc_Dsp::v_adsr0 ], regs[ 0x10 * i + Spc_Dsp::v_gain ] );
+					this->env_modes[ i ].set( env_mode, regs[ 0x10 * i + SuperFamicom::SPC_DSP::v_adsr0 ], regs[ 0x10 * i + SuperFamicom::SPC_DSP::v_gain ] );
 				}
 			}
 
 			const char * p_out_levels = p_info.info_get( spc_vis_field_out_levels );
 			if ( p_out_levels )
 			{
-				for ( unsigned i = 0, j = min( Spc_Dsp::voice_count * 2, strlen( p_out_levels ) / 4 ); i < j; i++ )
+				for ( unsigned i = 0, j = min( SuperFamicom::SPC_DSP::voice_count * 2, strlen( p_out_levels ) / 4 ); i < j; i++ )
 				{
 					pfc::string8 str( p_out_levels + i * 4, 4 );
 					char * end;
@@ -476,7 +476,7 @@ private:
 			}
 
 			BYTE bWave,bOldWave;
-			bWave = regs[ i * 0x10 + Spc_Dsp::v_srcn ]; bOldWave = old_regs[ i * 0x10 + Spc_Dsp::v_srcn ];
+			bWave = regs[ i * 0x10 + SuperFamicom::SPC_DSP::v_srcn ]; bOldWave = old_regs[ i * 0x10 + SuperFamicom::SPC_DSP::v_srcn ];
 			if(m_bDrawAll||bWave!=bOldWave)
 			{
 				SetRect(&rc,m_Columns[1].x,i*14+nYPos,m_Columns[2].x-1,i*14+nYPos+13);
@@ -487,38 +487,38 @@ private:
 				TextOut(m_hDC,m_Columns[1].x,i*14+nYPos,szBuf,_tcslen(szBuf));
 			}
 
-			if(m_bDrawAll||((regs[Spc_Dsp::r_kon]^old_regs[Spc_Dsp::r_kon])&(1<<i)))
+			if(m_bDrawAll||((regs[SuperFamicom::SPC_DSP::r_kon]^old_regs[SuperFamicom::SPC_DSP::r_kon])&(1<<i)))
 			{
 				SetRect(&rc,m_Columns[2].x,i*14+nYPos,m_Columns[2].x+13,i*14+nYPos+13);
-				INT br=m_bVisRunning&&regs[Spc_Dsp::r_kon]&(1<<i)?7:6;
+				INT br=m_bVisRunning&&regs[SuperFamicom::SPC_DSP::r_kon]&(1<<i)?7:6;
 				FillRect(m_hDC,&rc,m_Brushes[br]);
 			}
 
-			if(m_bDrawAll||((regs[Spc_Dsp::r_eon]^old_regs[Spc_Dsp::r_eon])&(1<<i)))
+			if(m_bDrawAll||((regs[SuperFamicom::SPC_DSP::r_eon]^old_regs[SuperFamicom::SPC_DSP::r_eon])&(1<<i)))
 			{
 				SetRect(&rc,m_Columns[3].x,i*14+nYPos,m_Columns[3].x+13,i*14+nYPos+13);
-				INT br=m_bVisRunning&&regs[Spc_Dsp::r_eon]&(1<<i)?9:8;
+				INT br=m_bVisRunning&&regs[SuperFamicom::SPC_DSP::r_eon]&(1<<i)?9:8;
 				FillRect(m_hDC,&rc,m_Brushes[br]);
 			}
 
-			if(m_bDrawAll||((regs[Spc_Dsp::r_pmon]^old_regs[Spc_Dsp::r_pmon])&(1<<i)))
+			if(m_bDrawAll||((regs[SuperFamicom::SPC_DSP::r_pmon]^old_regs[SuperFamicom::SPC_DSP::r_pmon])&(1<<i)))
 			{
 				SetRect(&rc,m_Columns[4].x,i*14+nYPos,m_Columns[4].x+13,i*14+nYPos+13);
-				INT br=m_bVisRunning&&regs[Spc_Dsp::r_pmon]&(1<<i)?11:10;
+				INT br=m_bVisRunning&&regs[SuperFamicom::SPC_DSP::r_pmon]&(1<<i)?11:10;
 				FillRect(m_hDC,&rc,m_Brushes[br]);
 			}
 
-			if(m_bDrawAll||((regs[Spc_Dsp::r_non]^old_regs[Spc_Dsp::r_non])&(1<<i)))
+			if(m_bDrawAll||((regs[SuperFamicom::SPC_DSP::r_non]^old_regs[SuperFamicom::SPC_DSP::r_non])&(1<<i)))
 			{
 				SetRect(&rc,m_Columns[5].x,i*14+nYPos,m_Columns[5].x+13,i*14+nYPos+13);
-				INT br=m_bVisRunning&&regs[Spc_Dsp::r_non]&(1<<i)?13:12;
+				INT br=m_bVisRunning&&regs[SuperFamicom::SPC_DSP::r_non]&(1<<i)?13:12;
 				FillRect(m_hDC,&rc,m_Brushes[br]);
 			}
 
-			BYTE bESrnd=(regs[Spc_Dsp::r_evoll]^regs[Spc_Dsp::r_evolr])&0x80,bOldESrnd=(old_regs[Spc_Dsp::r_evoll]^old_regs[Spc_Dsp::r_evolr])&0x80;
-			BYTE bSrnd=(regs[i*0x10+Spc_Dsp::v_voll]^regs[i*0x10+Spc_Dsp::v_volr]),bOldSrnd=(old_regs[i*0x10+Spc_Dsp::v_voll]^old_regs[i*0x10+Spc_Dsp::v_volr]);
-			bSrnd=(bSrnd^(regs[Spc_Dsp::r_mvoll]^regs[Spc_Dsp::r_mvolr]))&0x80;
-			bOldSrnd=(bOldSrnd^(old_regs[Spc_Dsp::r_mvoll]^old_regs[Spc_Dsp::r_mvolr]))&0x80;
+			BYTE bESrnd=(regs[SuperFamicom::SPC_DSP::r_evoll]^regs[SuperFamicom::SPC_DSP::r_evolr])&0x80,bOldESrnd=(old_regs[SuperFamicom::SPC_DSP::r_evoll]^old_regs[SuperFamicom::SPC_DSP::r_evolr])&0x80;
+			BYTE bSrnd=(regs[i*0x10+SuperFamicom::SPC_DSP::v_voll]^regs[i*0x10+SuperFamicom::SPC_DSP::v_volr]),bOldSrnd=(old_regs[i*0x10+SuperFamicom::SPC_DSP::v_voll]^old_regs[i*0x10+SuperFamicom::SPC_DSP::v_volr]);
+			bSrnd=(bSrnd^(regs[SuperFamicom::SPC_DSP::r_mvoll]^regs[SuperFamicom::SPC_DSP::r_mvolr]))&0x80;
+			bOldSrnd=(bOldSrnd^(old_regs[SuperFamicom::SPC_DSP::r_mvoll]^old_regs[SuperFamicom::SPC_DSP::r_mvolr]))&0x80;
 			bSrnd=max(bSrnd,bESrnd);
 			bOldSrnd=max(bOldSrnd,bOldESrnd);
 			if(m_bDrawAll||bSrnd!=bOldSrnd)
@@ -528,8 +528,8 @@ private:
 				FillRect(m_hDC,&rc,m_Brushes[br]);
 			}
 
-			BOOL playingchanged=env_modes[i]!=old_env_modes[i]||env_modes[i]!=Sustain||(!regs[i*0x10+Spc_Dsp::v_envx])!=(!old_regs[i*0x10+Spc_Dsp::v_envx]);
-			BOOL active=regs[i*0x10+Spc_Dsp::v_envx]||env_modes[i]!=Release;
+			BOOL playingchanged=env_modes[i]!=old_env_modes[i]||env_modes[i]!=Sustain||(!regs[i*0x10+SuperFamicom::SPC_DSP::v_envx])!=(!old_regs[i*0x10+SuperFamicom::SPC_DSP::v_envx]);
+			BOOL active=regs[i*0x10+SuperFamicom::SPC_DSP::v_envx]||env_modes[i]!=Release;
 
 			if(m_bDrawAll||playingchanged)
 			{
@@ -554,18 +554,18 @@ private:
 				}
 			}
 
-			if(m_bDrawAll||regs[i*0x10+Spc_Dsp::v_envx]!=old_regs[i*0x10+Spc_Dsp::v_envx])
+			if(m_bDrawAll||regs[i*0x10+SuperFamicom::SPC_DSP::v_envx]!=old_regs[i*0x10+SuperFamicom::SPC_DSP::v_envx])
 			{
-				INT w=regs[i*0x10+Spc_Dsp::v_envx]*50/127;
+				INT w=regs[i*0x10+SuperFamicom::SPC_DSP::v_envx]*50/127;
 				BitBlt(m_hDCGroup[6],0,0,50,13,m_hDCGroup[0],0,0,SRCCOPY);
 				if(m_bVisRunning&&w)
 					BitBlt(m_hDCGroup[6],0,0,w,13,m_hDCGroup[1],0,0,SRCCOPY);
 				BitBlt(m_hDC,m_Columns[8].x,i*14+nYPos,50,13,m_hDCGroup[6],0,0,SRCCOPY);
 			}
 
-			if(m_bDrawAll||playingchanged||regs[i*0x10+Spc_Dsp::v_pitchl]!=old_regs[i*0x10+Spc_Dsp::v_pitchl]||((regs[i*0x10+Spc_Dsp::v_pitchh]^old_regs[i*0x10+Spc_Dsp::v_pitchh])&0x3f))
+			if(m_bDrawAll||playingchanged||regs[i*0x10+SuperFamicom::SPC_DSP::v_pitchl]!=old_regs[i*0x10+SuperFamicom::SPC_DSP::v_pitchl]||((regs[i*0x10+SuperFamicom::SPC_DSP::v_pitchh]^old_regs[i*0x10+SuperFamicom::SPC_DSP::v_pitchh])&0x3f))
 			{
-				INT pitch=regs[i*0x10+Spc_Dsp::v_pitchl]|(regs[i*0x10+Spc_Dsp::v_pitchh]<<8)&0x3FFF;
+				INT pitch=regs[i*0x10+SuperFamicom::SPC_DSP::v_pitchl]|(regs[i*0x10+SuperFamicom::SPC_DSP::v_pitchh]<<8)&0x3FFF;
 				INT w=pitch*50/0x3FFF;
 				BitBlt(m_hDCGroup[6],0,0,50,13,m_hDCGroup[2],0,0,SRCCOPY);
 				if(m_bVisRunning&&w&&active)
@@ -611,7 +611,7 @@ public:
 	{
 		Refresh();
 
-		RECT rcw = { 0, 0, m_Columns[11].x, Spc_Dsp::voice_count * 14 + 2 + ( m_bVisShowLabels ? 14 : 0 ) };
+		RECT rcw = { 0, 0, m_Columns[11].x, SuperFamicom::SPC_DSP::voice_count * 14 + 2 + ( m_bVisShowLabels ? 14 : 0 ) };
 
 		::AdjustWindowRectEx( &rcw, GetStyle(), FALSE, GetExStyle() );
 
@@ -735,7 +735,7 @@ public:
 	{
 		Refresh();
 
-		RECT rcw = { 0, 0, m_Columns[11].x, Spc_Dsp::voice_count * 14 + 2 + ( m_bVisShowLabels ? 14 : 0 ) };
+		RECT rcw = { 0, 0, m_Columns[11].x, SuperFamicom::SPC_DSP::voice_count * 14 + 2 + ( m_bVisShowLabels ? 14 : 0 ) };
 
 		::AdjustWindowRectEx( &rcw, GetStyle(), FALSE, GetExStyle() );
 
@@ -773,8 +773,8 @@ public:
 		ui_element_min_max_info ret;
 		ret.m_min_width = m_Columns[11].x;
 		ret.m_max_width = 1024 * 1024;
-		ret.m_min_height = Spc_Dsp::voice_count * 14 + 2 + 14 * m_bVisShowLabels;
-		ret.m_max_height = Spc_Dsp::voice_count * 14 + 2 + 14 * m_bVisShowLabels;
+		ret.m_min_height = SuperFamicom::SPC_DSP::voice_count * 14 + 2 + 14 * m_bVisShowLabels;
+		ret.m_max_height = SuperFamicom::SPC_DSP::voice_count * 14 + 2 + 14 * m_bVisShowLabels;
 		return ret;
 	}
 

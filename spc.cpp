@@ -4,6 +4,7 @@
 
 #include <gme/blargg_endian.h>
 #include <gme/Spc_Emu.h>
+#include <gme/Spc_Sfm.h>
 //#include <gme/SPC_Filter.h>
 
 #include "../helpers/window_placement_helper.h"
@@ -574,11 +575,12 @@ class input_spc : public input_gep
 {
 	file_info_impl    m_info;
 	bool              retagging;
+	bool              is_sfm;
 
 	bool vis_info;
-	unsigned char old_regs[Spc_Dsp::register_count];
-	Spc_Dsp::env_mode_t old_env_modes[Spc_Dsp::voice_count];
-	int old_out_levels[Spc_Dsp::voice_count * 2];
+	unsigned char old_regs[SuperFamicom::SPC_DSP::register_count];
+	SuperFamicom::SPC_DSP::env_mode_t old_env_modes[SuperFamicom::SPC_DSP::voice_count];
+	int old_out_levels[SuperFamicom::SPC_DSP::voice_count * 2];
 
 public:
 	input_spc()
@@ -588,8 +590,9 @@ public:
 
 	static bool g_is_our_path( const char * p_path, const char * p_extension )
 	{
-		if ( ! ( cfg_format_enable & 2 ) ) return false;
-		return ! stricmp( p_extension, "spc" );
+		if ( ( cfg_format_enable & 2 ) && stricmp( p_extension, "spc" ) == 0 ) return true;
+		if ( ( cfg_format_enable & 1024 ) && stricmp( p_extension, "sfm" ) == 0 ) return true;
+		return false;
 	}
 
 	void open( service_ptr_t<file> p_filehint, const char * p_path, t_input_open_reason p_reason, abort_callback & p_abort )
@@ -602,11 +605,8 @@ public:
 			char signature[ 35 ];
 			m_file->read_object_t( signature, p_abort );
 
-			if ( strncmp( signature, "SNES-SPC700 Sound File Data", 27 ) != 0 )
+			if ( strncmp( signature, "SNES-SPC700 Sound File Data", 27 ) == 0 )
 			{
-				console::info("Not an SPC file");
-				throw exception_io_data();
-			}
 
 			bool valid_tag = false;
 
@@ -745,6 +745,14 @@ public:
 				tag_song_ms = cfg_default_length;
 				tag_fade_ms = cfg_default_fade;
 			}
+			is_sfm = false;
+			}
+			else if ( memcmp( signature, "SFM1", 4 ) == 0 )
+			{
+				is_sfm = true;
+				tag_song_ms = cfg_default_length;
+				tag_fade_ms = cfg_default_fade;
+			}
 		}
 
 		retagging = p_reason == input_open_info_write;
@@ -766,6 +774,8 @@ public:
 
 	void decode_initialize( t_uint32 p_subsong, unsigned p_flags, abort_callback & p_abort )
 	{
+		if ( !is_sfm )
+		{
 		Spc_Emu * emu = ( Spc_Emu * ) this->emu;
 		if ( ! emu )
 		{
@@ -797,6 +807,33 @@ public:
 			emu->disable_surround( !! ( cfg_spc_anti_surround ) );
 			emu->interpolation_level( cfg_spc_interpolation );
 		}
+		}
+		else
+		{
+			Sfm_Emu * emu;
+			this->emu = emu = new Sfm_Emu;
+			try
+			{
+				m_file->seek( 0, p_abort );
+				foobar_Data_Reader rdr( m_file, p_abort );
+
+				ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
+				ERRCHK( emu->load( rdr ) );
+				handle_warning();
+			}
+			catch(...)
+			{
+				if ( emu )
+				{
+					delete emu;
+					this->emu = emu = NULL;
+				}
+				throw;
+			}
+
+			emu->disable_surround( !! ( cfg_spc_anti_surround ) );
+			emu->interpolation_level( cfg_spc_interpolation );
+		}
 
 		input_gep::decode_initialize( 0, p_flags, p_abort );
 
@@ -818,19 +855,22 @@ public:
 		{
 			bool ret = false;
 
-			unsigned char regs[Spc_Dsp::register_count];
-			Spc_Dsp::env_mode_t env_modes[Spc_Dsp::voice_count];
-			int out_levels[Spc_Dsp::voice_count * 2];
+			unsigned char regs[SuperFamicom::SPC_DSP::register_count];
+			SuperFamicom::SPC_DSP::env_mode_t env_modes[SuperFamicom::SPC_DSP::voice_count];
+			int out_levels[SuperFamicom::SPC_DSP::voice_count * 2];
 
-			const Spc_Dsp * dsp = (( Spc_Emu * )emu)->get_apu()->get_dsp();
+			const SuperFamicom::SPC_DSP * dsp;
+			if ( !is_sfm ) dsp = &((( Spc_Emu * )emu)->get_smp()->dsp.spc_dsp);
+			else dsp = &((( Sfm_Emu * )emu)->get_smp()->dsp.spc_dsp);
 
-			for ( unsigned i = 0; i < Spc_Dsp::register_count; i++ ) regs[ i ] = dsp->read( i );
-			for ( unsigned i = 0; i < Spc_Dsp::voice_count; i++ ) env_modes[ i ] = dsp->get_voice( i )->env_mode;
-			for ( unsigned i = 0; i < Spc_Dsp::voice_count; i++ )
+			for ( unsigned i = 0; i < SuperFamicom::SPC_DSP::register_count; i++ ) regs[ i ] = dsp->read( i );
+			for ( unsigned i = 0; i < SuperFamicom::SPC_DSP::voice_count; i++ ) env_modes[ i ] = dsp->m.voices[ i ].env_mode;
+			for ( unsigned i = 0; i < SuperFamicom::SPC_DSP::voice_count; i++ )
 			{
-				out_levels[ i * 2 + 0 ] = dsp->get_max_level( i, 0 );
-				out_levels[ i * 2 + 1 ] = dsp->get_max_level( i, 1 );
+				out_levels[ i * 2 + 0 ] = dsp->m.max_level[ i ][ 0 ];
+				out_levels[ i * 2 + 1 ] = dsp->m.max_level[ i ][ 1 ];
 			}
+			memset( (void *) &dsp->m.max_level, 0, sizeof( dsp->m.max_level ) );
 
 			pfc::string8 temp;
 
@@ -840,7 +880,7 @@ public:
 
 				memcpy( old_regs, regs, sizeof( old_regs ) );
 
-				for ( unsigned i = 0; i < Spc_Dsp::register_count; i++ )
+				for ( unsigned i = 0; i < SuperFamicom::SPC_DSP::register_count; i++ )
 				{
 					add_hex( temp, regs[ i ] );
 				}
@@ -856,7 +896,7 @@ public:
 
 				memcpy( old_env_modes, env_modes, sizeof( old_env_modes ) );
 
-				for ( unsigned i = 0; i < Spc_Dsp::voice_count; i++ )
+				for ( unsigned i = 0; i < SuperFamicom::SPC_DSP::voice_count; i++ )
 				{
 					temp.add_byte( '0' + (int) env_modes[ i ] );
 				}
@@ -872,7 +912,7 @@ public:
 
 				memcpy( old_out_levels, out_levels, sizeof( old_out_levels ) );
 
-				for ( unsigned i = 0; i < Spc_Dsp::voice_count * 2; i++ )
+				for ( unsigned i = 0; i < SuperFamicom::SPC_DSP::voice_count * 2; i++ )
 				{
 					temp << pfc::format_int( out_levels[ i ], 4, 16 );
 				}
@@ -892,6 +932,8 @@ public:
 
 	void retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
 	{
+		if ( is_sfm ) throw exception_io_data();
+
 		m_file->seek( 66048, p_abort );
 		m_file->set_eof( p_abort );
 
@@ -1144,6 +1186,7 @@ public:
 };
 
 namespace a { DECLARE_FILE_TYPE("SPC files", "*.SPC"); }
+namespace e { DECLARE_FILE_TYPE("SFM files", "*.SFM"); }
 
 static input_factory_t           <input_spc>   g_input_spc_factory;
 static contextmenu_item_factory_t<context_spc> g_contextmenu_item_spc_factory;

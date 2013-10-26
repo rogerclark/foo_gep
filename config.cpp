@@ -1,7 +1,12 @@
-#define MYVERSION "1.169"
+#define MYVERSION "1.170"
 
 /*
 	change log
+
+2013-10-26 10:00 UTC - kode54
+- Replaced snes_spc with higan accurate smp
+- Enabled SFM support
+- Version is now 1.170
 
 2013-10-16 06:15 UTC - kode54
 - ...And fixed the Data_Reader and File_Reader interfaces to use the
@@ -831,7 +836,7 @@ BOOL CMyPreferences::OnInitDialog(CWindow, LPARAM) {
 	::SendMessage( w, TBM_SETPOS, 1, cfg_effects_echo_depth );
 
 	int n,o;
-	for(n=IDC_FORMAT_NSF,o=0;n<=IDC_FORMAT_SGC;n++,o++)
+	for(n=IDC_FORMAT_NSF,o=0;n<=IDC_FORMAT_SFM;n++,o++)
 	{
 		SendDlgItemMessage( n, BM_SETCHECK, cfg_format_enable & ( 1 << o ) );
 	}
@@ -917,7 +922,7 @@ void CMyPreferences::reset() {
 	SendDlgItemMessage( IDC_ANTISURROUND, BM_SETCHECK, default_cfg_spc_anti_surround );
 	SendDlgItemMessage( IDC_GD3JAPANESE, BM_SETCHECK, default_cfg_vgm_gd3_prefers_japanese );
 	SendDlgItemMessage( IDC_EFFECTS, BM_SETCHECK, default_cfg_effects_enable );
-	for(n=IDC_FORMAT_NSF,o=0;n<=IDC_FORMAT_SGC;n++,o++)
+	for(n=IDC_FORMAT_NSF,o=0;n<=IDC_FORMAT_SFM;n++,o++)
 	{
 		SendDlgItemMessage( n, BM_SETCHECK, !! ( default_cfg_format_enable & ( 1 << o ) ) );
 	}
@@ -970,7 +975,7 @@ void CMyPreferences::apply() {
 	cfg_vgm_gd3_prefers_japanese = SendDlgItemMessage( IDC_GD3JAPANESE, BM_GETCHECK );
 	cfg_effects_enable = SendDlgItemMessage( IDC_EFFECTS, BM_GETCHECK );
 	cfg_format_enable = ~0;
-	for (unsigned wp = IDC_FORMAT_NSF; wp <= IDC_FORMAT_SGC; wp++)
+	for (unsigned wp = IDC_FORMAT_NSF; wp <= IDC_FORMAT_SFM; wp++)
 	{
 		unsigned bit = 1 << ( wp - IDC_FORMAT_NSF );
 		unsigned mask = ~0 ^ bit;
@@ -1000,7 +1005,7 @@ bool CMyPreferences::HasChanged() {
 	if ( !changed )
 	{
 		unsigned format_enable = ~0;
-		for (unsigned wp = IDC_FORMAT_NSF; wp <= IDC_FORMAT_SGC; wp++)
+		for (unsigned wp = IDC_FORMAT_NSF; wp <= IDC_FORMAT_SFM; wp++)
 		{
 			unsigned bit = 1 << ( wp - IDC_FORMAT_NSF );
 			unsigned mask = ~0 ^ bit;
