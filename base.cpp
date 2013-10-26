@@ -145,6 +145,7 @@ void input_gep::monitor_start()
 {
 	monitoring = true;
 	if (is_normal_playback) ::monitor_start( emu, &sample_rate_scale, m_path );
+	else ::monitor_apply( emu, &sample_rate_scale );
 }
 
 void input_gep::monitor_update()

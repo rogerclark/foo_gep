@@ -1,7 +1,13 @@
-#define MYVERSION "1.171"
+#define MYVERSION "1.172"
 
 /*
 	change log
+
+2013-10-26 18:07 UTC - kode54
+- Fixed applying mute masks, tempo, pitch control, and disabling silence detection
+  when converting files with the override control enabled
+- Implemented tempo control in the new SPC/SFM players
+- Version is now 1.172
 
 2013-10-26 17:17 UTC - kode54
 - Fixed SPC/SFM seeking
