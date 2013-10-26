@@ -1,7 +1,11 @@
-#define MYVERSION "1.170"
+#define MYVERSION "1.171"
 
 /*
 	change log
+
+2013-10-26 16:18 UTC - kode54
+- Extended SFM specification a bit
+- Version is now 1.171
 
 2013-10-26 10:00 UTC - kode54
 - Replaced snes_spc with higan accurate smp
