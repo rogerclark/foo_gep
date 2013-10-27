@@ -1,7 +1,11 @@
-#define MYVERSION "1.173"
+#define MYVERSION "1.174"
 
 /*
 	change log
+
+2013-10-27 22:18 UTC - kode54
+- Updated SPC playback again a bit
+- Version is now 1.174
 
 2013-10-26 22:34 UTC - kode54
 - More SPC playback fixes
