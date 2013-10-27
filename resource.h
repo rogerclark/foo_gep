@@ -49,7 +49,6 @@
 #define IDC_FORMAT_SAP                  1220
 #define IDC_FORMAT_SGC                  1221
 #define IDC_FORMAT_SFM                  1222
-#define IDC_FORMAT_SGC2                 1222
 #define IDC_OVERRIDE                    1301
 #define IDC_RESET                       1302
 #define IDC_TEMPO_CAPTION               1303
