@@ -145,7 +145,7 @@ public:
 			if ( p_track->get_info_async( m_info ) )
 			{
 				const char * p_codec = m_info.info_get( "codec" );
-				if ( p_codec && !pfc::stricmp_ascii( p_codec, "SPC" ) )
+				if ( p_codec && (!pfc::stricmp_ascii( p_codec, "SPC" ) || !pfc::stricmp_ascii( p_codec, "SFM" )) )
 				{
 					m_bVisRunning = true;
 					m_bDrawAll = TRUE;
@@ -169,7 +169,7 @@ public:
 	void FB2KAPI on_playback_dynamic_info(const file_info & p_info)
 	{
 		const char * p_codec = p_info.info_get( "codec" );
-		if ( p_codec && !pfc::stricmp_ascii( p_codec, "SPC" ) )
+		if ( p_codec && (!pfc::stricmp_ascii( p_codec, "SPC" ) || !pfc::stricmp_ascii( p_codec, "SFM" )) )
 		{
 			if (!m_bVisRunning)
 			{

@@ -1,7 +1,11 @@
-#define MYVERSION "1.174"
+#define MYVERSION "1.175"
 
 /*
 	change log
+
+2013-10-29 06:42 UTC - kode54
+- Updated SFM standard, including tagging support
+- Version is now 1.175
 
 2013-10-27 22:18 UTC - kode54
 - Updated SPC playback again a bit

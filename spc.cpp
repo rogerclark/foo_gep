@@ -571,6 +571,27 @@ static void add_hex( pfc::string_base & p_out, unsigned char val )
 	p_out.add_byte( get_hex_nibble( val & 15 ) );
 }
 
+struct file_container
+{
+	file::ptr m_file;
+	abort_callback & m_abort;
+	file_container( file::ptr p_file, abort_callback & p_abort ) : m_file( p_file ), m_abort( p_abort ) { }
+};
+
+gme_err_t write_to_file( void * handle, void const* in, long count )
+{
+	struct file_container * f = ( struct file_container * ) handle;
+	try
+	{
+		f->m_file->write_object( in, count, f->m_abort );
+		return blargg_ok;
+	}
+	catch (...)
+	{
+		return "Error writing to file";
+	}
+}
+
 class input_spc : public input_gep
 {
 	file_info_impl    m_info;
@@ -608,150 +629,213 @@ public:
 			if ( strncmp( signature, "SNES-SPC700 Sound File Data", 27 ) == 0 )
 			{
 
-			bool valid_tag = false;
-
-			try
-			{
-				tag_processor::read_trailing( m_file, m_info, p_abort );
-
-				const char * p;
-				p = m_info.meta_get( field_length, 0 );
-				if (p)
-				{
-					m_info.info_set( field_length, p );
-					tag_song_ms = atoi( p );
-					m_info.meta_remove_field( field_length );
-				}
-				else
-				{
-					tag_song_ms = 0;
-				}
-				p = m_info.meta_get( field_fade, 0 );
-				if ( p )
-				{
-					m_info.info_set( field_fade,p );
-					tag_fade_ms = atoi( p );
-					m_info.meta_remove_field( field_fade );
-				}
-				else
-				{
-					tag_fade_ms = 0;
-				}
-
-				valid_tag = true;
-			}
-			catch ( const exception_io_data & ) {}
-
-			if ( ! valid_tag )
-			{
-				m_file->seek( 0, p_abort );
-				foobar_Data_Reader rdr( m_file, p_abort );
-
-				delete emu;
-				if ( p_reason != input_open_decode )
-					emu = gme_spc_type->new_info();
-				else
-				{
-					// XXX needs to be in sync with crap in decode_initialize, or something
-					emu = new Spc_Emu; //_Filtered;
-				}
-				if ( !emu ) throw std::bad_alloc();
-
-				ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
-				ERRCHK( emu->load( rdr ) );
-				handle_warning();
-
-				if ( p_reason == input_open_decode )
-				{
-					static_cast<Spc_Emu *> (this->emu)->disable_surround( !! ( cfg_spc_anti_surround ) );
-					static_cast<Spc_Emu *> (this->emu)->interpolation_level( cfg_spc_interpolation );
-				}
-
-				track_info_t i;
-				ERRCHK( emu->track_info( &i, 0 ) );
-
-				HEADER_STRING( m_info, "album", i.game );
-				HEADER_STRING( m_info, "title", i.song );
-				HEADER_STRING( m_info, "artist", i.author );
-				HEADER_STRING( m_info, "copyright", i.copyright );
-				HEADER_STRING( m_info, "comment", i.comment );
-				HEADER_STRING( m_info, "dumper", i.dumper );
-				HEADER_STRING( m_info, "OST", i.ost );
-				HEADER_STRING( m_info, "discnumber", i.disc );
-				HEADER_STRING( m_info, "tracknumber", i.track );
-
-				if ( i.length > 0 ) tag_song_ms = i.length;
-				if ( i.fade_length > 0 ) tag_fade_ms = i.fade_length;
-#if 0
-				HEADER_STRING(m_info, "title", m_header.song);
-				HEADER_STRING(m_info, "album", m_header.game);
-				HEADER_STRING(m_info, "dumper", m_header.dumper);
-				HEADER_STRING(m_info, "comment", m_header.comment);
-				//HEADER_STRING(m_info, "date", m_header.date);
-				if ((m_header.date)[0]) m_info.meta_set("date", pfc::stringcvt::string_utf8_from_ansi(((const char *)&m_header.date), sizeof((m_header.date))));
-				HEADER_STRING(m_info, "artist", m_header.author);
-
-				tag_song_ms = atoi(pfc::string_simple((const char *)&m_header.len_secs, sizeof(m_header.len_secs))) * 1000;
-				tag_fade_ms = atoi(pfc::string_simple((const char *)&m_header.fade_msec, sizeof(m_header.fade_msec)));
-				voice_mask = m_header.mute_mask;
+				bool valid_tag = false;
 
 				try
 				{
-					ID666TAG tag;
+					tag_processor::read_trailing( m_file, m_info, p_abort );
 
-					memset(&tag, 0, sizeof(tag));
-
-					m_file->seek( 66048, p_abort );
-					load_id666( m_file, & tag, p_abort );
-
-					HEADER_STRING(m_info, "title", tag.szTitle);
-					HEADER_STRING(m_info, "album", tag.szGame);
-					HEADER_STRING(m_info, "artist", tag.szArtist);
-					HEADER_STRING(m_info, "dumper", tag.szDumper);
-					HEADER_STRING(m_info, "date", tag.szDate);
-					HEADER_STRING(m_info, "comment", tag.szComment);
-
-					HEADER_STRING(m_info, "OST", tag.szOST);
-					HEADER_STRING(m_info, "publisher", tag.szPublisher);
-
-					if ( tag.wTrack > 255 )
+					const char * p;
+					p = m_info.meta_get( field_length, 0 );
+					if (p)
 					{
-						pfc::string8 temp;
-						temp = pfc::format_int( tag.wTrack >> 8 );
-						if ( tag.wTrack & 255 )
-						{
-							char foo[ 2 ] = { tag.wTrack & 255, 0 };
-							temp << pfc::stringcvt::string_utf8_from_ansi( foo );
-						}
-						m_info.meta_set("tracknumber", temp);
+						m_info.info_set( field_length, p );
+						tag_song_ms = atoi( p );
+						m_info.meta_remove_field( field_length );
+					}
+					else
+					{
+						tag_song_ms = 0;
+					}
+					p = m_info.meta_get( field_fade, 0 );
+					if ( p )
+					{
+						m_info.info_set( field_fade,p );
+						tag_fade_ms = atoi( p );
+						m_info.meta_remove_field( field_fade );
+					}
+					else
+					{
+						tag_fade_ms = 0;
 					}
 
-					if ( tag.bDisc > 0 )
-						m_info.meta_set("disc", pfc::format_int( tag.bDisc ) );
-
-					if (tag.uSong_ms) tag_song_ms = tag.uSong_ms;
-					if (tag.uFade_ms) tag_fade_ms = tag.uFade_ms;
-					voice_mask = tag.bMute;
+					valid_tag = true;
 				}
 				catch ( const exception_io_data & ) {}
+
+				if ( ! valid_tag )
+				{
+					m_file->seek( 0, p_abort );
+					foobar_Data_Reader rdr( m_file, p_abort );
+
+					delete emu;
+					if ( p_reason != input_open_decode )
+						emu = gme_spc_type->new_info();
+					else
+					{
+						// XXX needs to be in sync with crap in decode_initialize, or something
+						emu = new Spc_Emu; //_Filtered;
+					}
+					if ( !emu ) throw std::bad_alloc();
+
+					ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
+					ERRCHK( emu->load( rdr ) );
+					handle_warning();
+
+					if ( p_reason == input_open_decode )
+					{
+						static_cast<Spc_Emu *> (this->emu)->disable_surround( !! ( cfg_spc_anti_surround ) );
+						static_cast<Spc_Emu *> (this->emu)->interpolation_level( cfg_spc_interpolation );
+					}
+
+					track_info_t i;
+					ERRCHK( emu->track_info( &i, 0 ) );
+
+					HEADER_STRING( m_info, "album", i.game );
+					HEADER_STRING( m_info, "title", i.song );
+					HEADER_STRING( m_info, "artist", i.author );
+					HEADER_STRING( m_info, "copyright", i.copyright );
+					HEADER_STRING( m_info, "comment", i.comment );
+					HEADER_STRING( m_info, "dumper", i.dumper );
+					HEADER_STRING( m_info, "OST", i.ost );
+					HEADER_STRING( m_info, "discnumber", i.disc );
+					HEADER_STRING( m_info, "tracknumber", i.track );
+
+					if ( i.length > 0 ) tag_song_ms = i.length;
+					if ( i.fade_length > 0 ) tag_fade_ms = i.fade_length;
+#if 0
+					HEADER_STRING(m_info, "title", m_header.song);
+					HEADER_STRING(m_info, "album", m_header.game);
+					HEADER_STRING(m_info, "dumper", m_header.dumper);
+					HEADER_STRING(m_info, "comment", m_header.comment);
+					//HEADER_STRING(m_info, "date", m_header.date);
+					if ((m_header.date)[0]) m_info.meta_set("date", pfc::stringcvt::string_utf8_from_ansi(((const char *)&m_header.date), sizeof((m_header.date))));
+					HEADER_STRING(m_info, "artist", m_header.author);
+
+					tag_song_ms = atoi(pfc::string_simple((const char *)&m_header.len_secs, sizeof(m_header.len_secs))) * 1000;
+					tag_fade_ms = atoi(pfc::string_simple((const char *)&m_header.fade_msec, sizeof(m_header.fade_msec)));
+					voice_mask = m_header.mute_mask;
+
+					try
+					{
+						ID666TAG tag;
+
+						memset(&tag, 0, sizeof(tag));
+
+						m_file->seek( 66048, p_abort );
+						load_id666( m_file, & tag, p_abort );
+
+						HEADER_STRING(m_info, "title", tag.szTitle);
+						HEADER_STRING(m_info, "album", tag.szGame);
+						HEADER_STRING(m_info, "artist", tag.szArtist);
+						HEADER_STRING(m_info, "dumper", tag.szDumper);
+						HEADER_STRING(m_info, "date", tag.szDate);
+						HEADER_STRING(m_info, "comment", tag.szComment);
+
+						HEADER_STRING(m_info, "OST", tag.szOST);
+						HEADER_STRING(m_info, "publisher", tag.szPublisher);
+
+						if ( tag.wTrack > 255 )
+						{
+							pfc::string8 temp;
+							temp = pfc::format_int( tag.wTrack >> 8 );
+							if ( tag.wTrack & 255 )
+							{
+								char foo[ 2 ] = { tag.wTrack & 255, 0 };
+								temp << pfc::stringcvt::string_utf8_from_ansi( foo );
+							}
+							m_info.meta_set("tracknumber", temp);
+						}
+
+						if ( tag.bDisc > 0 )
+							m_info.meta_set("disc", pfc::format_int( tag.bDisc ) );
+
+						if (tag.uSong_ms) tag_song_ms = tag.uSong_ms;
+						if (tag.uFade_ms) tag_fade_ms = tag.uFade_ms;
+						voice_mask = tag.bMute;
+					}
+					catch ( const exception_io_data & ) {}
 #endif
 
-				if (tag_song_ms > 0) m_info.info_set_int(field_length, tag_song_ms);
-				if (tag_fade_ms > 0) m_info.info_set_int(field_fade, tag_fade_ms);
-			}
+					if (tag_song_ms > 0) m_info.info_set_int(field_length, tag_song_ms);
+					if (tag_fade_ms > 0) m_info.info_set_int(field_fade, tag_fade_ms);
+				}
 
-			if (!tag_song_ms)
-			{
-				tag_song_ms = cfg_default_length;
-				tag_fade_ms = cfg_default_fade;
-			}
-			is_sfm = false;
+				if (!tag_song_ms)
+				{
+					tag_song_ms = cfg_default_length;
+					tag_fade_ms = cfg_default_fade;
+				}
+				is_sfm = false;
 			}
 			else if ( memcmp( signature, "SFM1", 4 ) == 0 )
 			{
 				is_sfm = true;
-				tag_song_ms = cfg_default_length;
-				tag_fade_ms = cfg_default_fade;
+
+				delete emu;
+				if ( p_reason != input_open_decode )
+					emu = gme_sfm_type->new_info();
+				else
+				{
+					emu = new Sfm_Emu;
+				}
+				if ( !emu ) throw std::bad_alloc();
+
+				try
+				{
+					m_file->seek( 0, p_abort );
+					foobar_Data_Reader rdr( m_file, p_abort );
+
+					ERRCHK( emu->set_sample_rate( Sfm_Emu::native_sample_rate ) );
+					ERRCHK( emu->load( rdr ) );
+					handle_warning();
+				}
+				catch(...)
+				{
+					if ( emu )
+					{
+						delete emu;
+						this->emu = emu = NULL;
+					}
+					throw;
+				}
+
+				if ( p_reason == input_open_decode )
+				{
+					static_cast<Sfm_Emu *> (this->emu)->disable_surround( !! ( cfg_spc_anti_surround ) );
+					static_cast<Sfm_Emu *> (this->emu)->interpolation_level( cfg_spc_interpolation );
+				}
+
+				track_info_t i;
+
+				ERRCHK( emu->track_info( &i, 0 ) );
+
+				if (i.length > 0) m_info.info_set_int(field_length, i.length);
+				if (i.fade_length > 0) m_info.info_set_int(field_fade, i.fade_length);
+
+				if ( i.length )
+				{
+					tag_song_ms = i.length;
+					tag_fade_ms = i.fade_length;
+				}
+				else
+				{
+					tag_song_ms = cfg_default_length;
+					tag_fade_ms = cfg_default_fade;
+				}
+
+				HEADER_STRING( m_info, "system", i.system );
+				HEADER_STRING( m_info, "album", i.game );
+				HEADER_STRING( m_info, "title", i.song );
+				HEADER_STRING( m_info, "artist", i.author );
+				HEADER_STRING( m_info, "date", i.date );
+				HEADER_STRING( m_info, "engineer", i.engineer );
+				HEADER_STRING( m_info, "composer", i.composer );
+				HEADER_STRING( m_info, "sequencer", i.sequencer );
+				HEADER_STRING( m_info, "copyright", i.copyright );
+				HEADER_STRING( m_info, "comment", i.comment );
+				HEADER_STRING( m_info, "dumper", i.dumper );
+				HEADER_STRING( m_info, "tagger", i.tagger );
 			}
 		}
 
@@ -762,7 +846,7 @@ public:
 	{
 		p_info.copy( m_info );
 
-		p_info.info_set( "codec", "SPC" );
+		p_info.info_set( "codec", is_sfm ? "SFM" : "SPC" );
 		p_info.info_set( "encoding", "synthesized" );
 
 		p_info.info_set_int( "samplerate", Spc_Emu::native_sample_rate );
@@ -776,63 +860,68 @@ public:
 	{
 		if ( !is_sfm )
 		{
-		Spc_Emu * emu = ( Spc_Emu * ) this->emu;
-		if ( ! emu )
-		{
-			this->emu = emu = new Spc_Emu;//_Filtered;
-
-			try
+			Spc_Emu * emu = ( Spc_Emu * ) this->emu;
+			if ( ! emu )
 			{
-				m_file->seek( 0, p_abort );
-				foobar_Data_Reader rdr( m_file, p_abort );
+				this->emu = emu = new Spc_Emu;//_Filtered;
 
-				ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
-				ERRCHK( emu->load( rdr ) );
-				handle_warning();
-			}
-			catch(...)
-			{
-				if ( emu )
+				try
 				{
-					delete emu;
-					this->emu = emu = NULL;
+					m_file->seek( 0, p_abort );
+					foobar_Data_Reader rdr( m_file, p_abort );
+
+					ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
+					ERRCHK( emu->load( rdr ) );
+					handle_warning();
 				}
-				throw;
+				catch(...)
+				{
+					if ( emu )
+					{
+						delete emu;
+						this->emu = emu = NULL;
+					}
+					throw;
+				}
+
+				if ( ! retagging ) m_file.release();
+
+				//emu->mute_voices( voice_mask );
+
+				emu->disable_surround( !! ( cfg_spc_anti_surround ) );
+				emu->interpolation_level( cfg_spc_interpolation );
 			}
-
-			if ( ! retagging ) m_file.release();
-
-			//emu->mute_voices( voice_mask );
-
-			emu->disable_surround( !! ( cfg_spc_anti_surround ) );
-			emu->interpolation_level( cfg_spc_interpolation );
-		}
 		}
 		else
 		{
-			Sfm_Emu * emu;
-			this->emu = emu = new Sfm_Emu;
-			try
+			Sfm_Emu * emu = ( Sfm_Emu * ) this->emu;
+			if ( !emu )
 			{
-				m_file->seek( 0, p_abort );
-				foobar_Data_Reader rdr( m_file, p_abort );
-
-				ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
-				ERRCHK( emu->load( rdr ) );
-				handle_warning();
-			}
-			catch(...)
-			{
-				if ( emu )
+				this->emu = emu = new Sfm_Emu;
+				try
 				{
-					delete emu;
-					this->emu = emu = NULL;
-				}
-				throw;
-			}
+					m_file->seek( 0, p_abort );
+					foobar_Data_Reader rdr( m_file, p_abort );
 
-			emu->disable_surround( !! ( cfg_spc_anti_surround ) );
-			emu->interpolation_level( cfg_spc_interpolation );
+					ERRCHK( emu->set_sample_rate( Spc_Emu::native_sample_rate ) );
+					ERRCHK( emu->load( rdr ) );
+					handle_warning();
+				}
+				catch(...)
+				{
+					if ( emu )
+					{
+						delete emu;
+						this->emu = emu = NULL;
+					}
+					throw;
+				}
+
+				if ( ! retagging ) m_file.release();
+
+				emu->disable_surround( !! ( cfg_spc_anti_surround ) );
+				emu->interpolation_level( cfg_spc_interpolation );
+			}
 		}
 
 		input_gep::decode_initialize( 0, p_flags, p_abort );
@@ -932,38 +1021,76 @@ public:
 
 	void retag_set_info( t_uint32 p_subsong, const file_info & p_info, abort_callback & p_abort )
 	{
-		if ( is_sfm ) throw exception_io_data();
-
-		m_file->seek( 66048, p_abort );
-		m_file->set_eof( p_abort );
-
-		m_info.copy( p_info );
-
-		write_id666( m_file, p_info, p_abort );
-		write_xid6( m_file, p_info, p_abort );
-
-		file_info_impl l_info;
-		l_info.copy( p_info );
-
+		if ( !is_sfm )
 		{
-			const char * p;
-			p = l_info.info_get( field_length );
-			if (p)
+			m_file->seek( 66048, p_abort );
+			m_file->set_eof( p_abort );
+
+			m_info.copy( p_info );
+
+			write_id666( m_file, p_info, p_abort );
+			write_xid6( m_file, p_info, p_abort );
+
+			file_info_impl l_info;
+			l_info.copy( p_info );
+
 			{
-				tag_song_ms = atoi(p);
-				l_info.meta_set( field_length, p );
+				const char * p;
+				p = l_info.info_get( field_length );
+				if (p)
+				{
+					tag_song_ms = atoi(p);
+					l_info.meta_set( field_length, p );
+				}
+				p = l_info.info_get( field_fade );
+				if (p)
+				{
+					tag_fade_ms = atoi(p);
+					l_info.meta_set( field_fade, p );
+				}
 			}
-			p = l_info.info_get( field_fade );
-			if (p)
-			{
-				tag_fade_ms = atoi(p);
-				l_info.meta_set( field_fade, p );
-			}
+
+			tag_processor::write_apev2( m_file, l_info, p_abort );
+
+			m_stats = m_file->get_stats( p_abort );
 		}
+		else
+		{
+			track_info_t i;
 
-		tag_processor::write_apev2( m_file, l_info, p_abort );
+			ERRCHK( emu->track_info( &i, 0 ) );
 
-		m_stats = m_file->get_stats( p_abort );
+			{
+				const char *p;
+				p = p_info.info_get( field_length );
+				if (p)
+					i.length = tag_song_ms = atoi(p);
+				p = p_info.info_get( field_fade );
+				if (p)
+					i.fade_length = tag_fade_ms = atoi(p);
+
+#define REVERSE_HEADER_STRING(i,n,f) p = (i).meta_get((n), 0); if (p) strcpy_s((f), _countof((f)), p), (f)[_countof((f))-1] = '\0';
+
+				REVERSE_HEADER_STRING( p_info, "album", i.game );
+				REVERSE_HEADER_STRING( p_info, "title", i.song );
+				REVERSE_HEADER_STRING( p_info, "artist", i.author );
+				REVERSE_HEADER_STRING( p_info, "date", i.date );
+				REVERSE_HEADER_STRING( p_info, "composer", i.composer );
+				REVERSE_HEADER_STRING( p_info, "copyright", i.copyright );
+				REVERSE_HEADER_STRING( p_info, "dumper", i.dumper );
+
+#undef REVERSE_HEADER_STRING
+			}
+
+			ERRCHK( emu->set_track_info( &i, 0 ) );
+
+			m_file->seek( 0, p_abort );
+			m_file->set_eof( p_abort );
+
+			ERRCHK( emu->save( write_to_file, &file_container( m_file, p_abort ) ) );
+
+			m_info.copy( p_info );
+		}
 	}
 
 	void retag_commit( abort_callback & p_abort )
@@ -1124,7 +1251,7 @@ public:
 	virtual bool get_item_description(unsigned n, pfc::string_base & out)
 	{
 		if (n) uBugCheck();
-		out = "Edits the length of the selected SPC file, or sets the length of all selected SPC files.";
+		out = "Edits the length of the selected SPC or SFM file, or sets the length of all selected SPC files.";
 		return true;
 	}
 
@@ -1145,7 +1272,8 @@ public:
 		for (j = 0; j < i; j++)
 		{
 			const playable_location & foo = data.get_item(j)->get_location();
-			if ( stricmp( pfc::string_extension( foo.get_path() ), "spc" ) ) return false;
+			pfc::string_extension ext( foo.get_path() );
+			if ( stricmp( ext, "spc" ) && stricmp( ext, "sfm" ) ) return false;
 		}
 		if (i == 1) out = "Edit length";
 		else out = "Set length";
