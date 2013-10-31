@@ -1,7 +1,11 @@
-#define MYVERSION "1.175"
+#define MYVERSION "1.176"
 
 /*
 	change log
+
+2013-10-31 00:50 UTC - kode54
+- Added a hard limiter to SPC/SFM instead of hard clipping
+- Version is now 1.176
 
 2013-10-29 06:42 UTC - kode54
 - Updated SFM standard, including tagging support
