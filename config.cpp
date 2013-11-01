@@ -1,7 +1,12 @@
-#define MYVERSION "1.176"
+#define MYVERSION "1.177"
 
 /*
 	change log
+
+2013-11-01 01:46 UTC - kode54
+- Disabled hard limiter in SPC/SFM input and replaced with floating point scaling
+  outside of Game_Music_Emu itself
+- Version is now 1.177
 
 2013-10-31 00:50 UTC - kode54
 - Added a hard limiter to SPC/SFM instead of hard clipping

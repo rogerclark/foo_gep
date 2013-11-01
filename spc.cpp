@@ -924,6 +924,8 @@ public:
 			}
 		}
 
+		emu->set_gain( 1.0 );
+
 		input_gep::decode_initialize( 0, p_flags, p_abort );
 
 		first_block = false;
@@ -936,6 +938,16 @@ public:
 			memset( old_env_modes, 0xFF, sizeof( old_env_modes ) );
 			memset( old_out_levels, 0, sizeof( old_out_levels ) );
 		}
+	}
+
+	bool decode_run( audio_chunk & p_chunk,abort_callback & p_abort )
+	{
+		bool rval = input_gep::decode_run( p_chunk, p_abort );
+
+		if ( rval )
+			audio_math::scale( p_chunk.get_data(), p_chunk.get_sample_count() * p_chunk.get_channel_count(), p_chunk.get_data(), 1.4 );
+
+		return rval;
 	}
 
 	bool decode_get_dynamic_info( file_info & p_out, double & p_timestamp_delta )
